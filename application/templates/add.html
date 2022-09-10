@@ -1,0 +1,29 @@
+{% extends 'layout.html'%}
+{% block content %}
+    <div class="col-xs-10 col-sm-6 col-md-6">
+    <h2>add name Page</h2>
+    <div class="card card-style mb-2">
+        <div class="card-body">
+            <form action="" method="POST">
+                {{ form.csrf_token() }}
+                <fieldset class="form-group">
+                    <legend class="mb-4">Names and Surnames</legend>
+                    <div class="form-group">
+                        {{ form.name.label(class="form-control-label") }}
+                        {% if form.name.errors %}
+                        {{ form.name(class="form-control form-control-sm is-invalid") }}
+                        {% for error in form.amount.errors %}
+                        <div class="invalid-feedback">
+                            <span>{{error}}</span>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        {{ form.name(class="form-control form-control-sm") }}
+                        {% endif %}
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+    </div>
+    </div>
+{% endblock %}
