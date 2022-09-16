@@ -69,3 +69,30 @@ mylo.player_week_ft
 - ict_index varchar(10) NULL
 - value_ply numeric(18, 2) NULL
 - CONSTRAINT pk_player_week_id PRIMARY KEY (element_, round_gw)
+
+files are separated in 2 groups:
+- python code for airflow dags
+- python code for flask representation of data
+
+# Python code for airflow dags
+- sql_queries.py; containts all sql queris used in the python project
+- includes.py; contains all functions needed for transfering data from fantasy premier league api to postgre db
+- pull-fpl-data-s3-postgree.py; contains airflow dags
+
+# Python code for flask
+- run.py; running the flask server
+- __init__.py; initzialize flask app and db connection
+- routes.py; defines routes of flask server
+- layout.html; defines basi template of html structure
+- dashboard.html; shows fantasy premeir league data in charts and table
+
+## In development
+
+- switching table to: https://datatables.net
+- adding dynamic dashboards; thus person can filter the players by position
+- adding fixtures tables, and fixture analysis for top players
+
+## In future plans
+
+- web scraping data regarding xG and xI per games
+- web scraping data regarding the game statistics of each player (shots on goal, crosses, passes and etc.)
