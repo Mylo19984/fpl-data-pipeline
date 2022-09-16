@@ -108,11 +108,11 @@ sql_insert_teams_postgree = """INSERT INTO mylo.team_dm
                                     code = %s
                 """
 
-basic_ply_data = """select name, surname, form from mylo.player_general pg order by form desc limit 9"""
+basic_ply_data = """select name, surname, form from mylo.player_dm pg order by form desc limit 9"""
 
 value_per_points = """select name, surname, total_points
                         , cast(total_points/now_costs*10 as decimal(12,2)) as point_value, now_costs 
-                        from mylo.player_general pg order by total_points desc limit 9
+                        from mylo.player_dm pg order by total_points desc limit 9
                         """
 
 detailed_ply_data_per_week = '''
@@ -122,8 +122,8 @@ detailed_ply_data_per_week = '''
         ,pg.name || ' ' || pg.surname as ply_name
         ,"position" 
         ,tg."short_name" as team_name
-        from mylo.player_general pg 
-        left join mylo.teams_general tg 
+        from mylo.player_dm pg 
+        left join mylo.team_dm tg 
         on tg.id = pg.team_id 
         ),
         ct_stats_totals as (
@@ -131,14 +131,14 @@ detailed_ply_data_per_week = '''
         element_
         ,sum(total_points) as total_points 
         ,sum(bps) as bonus_points
-        from mylo.player_weeks pw 
+        from mylo.player_week_ft pw 
         group by 
         element_
         ),
         last_3_wk_numb as (
         select distinct
         round_gw
-        from mylo.player_weeks pw 
+        from mylo.player_week_ft pw 
         order by round_gw desc limit 3
         ),
         ct_last_weeks_3 as (
@@ -146,7 +146,7 @@ detailed_ply_data_per_week = '''
         element_
         , round_gw
         , total_points 
-        from mylo.player_weeks pw 
+        from mylo.player_week_ft pw 
         where round_gw in (select * from last_3_wk_numb)
         ),
         ct_last_weeks_3_final as (
@@ -161,8 +161,8 @@ detailed_ply_data_per_week = '''
         select 
         element_ 
         ,round(sum(total_points::decimal)/4,2) as avg_4_weeks
-        from mylo.player_weeks pw 
-        where round_gw in (select distinct round_gw from mylo.player_weeks order by round_gw desc limit 4)
+        from mylo.player_week_ft pw 
+        where round_gw in (select distinct round_gw from mylo.player_week_ft order by round_gw desc limit 4)
         group by element_
         )
         

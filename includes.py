@@ -176,8 +176,7 @@ def ply_weeks_s3_to_postgre(**kwargs):
 
         num_players = ti.xcom_pull(task_ids='fpl_ply_get_id')
 
-        # privremeno izmenjeno !!!
-        for id in range(1,105):
+        for id in range(1,num_players):
             #s3.Bucket('mylosh').download_file(F'ply_data_gw/{id}.json', F'{id}.json')
             #f = open(F'{id}.json')
             obj = s3.get_object(Bucket='mylosh', Key=F'ply_data_gw/{id}.json')
