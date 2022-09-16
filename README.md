@@ -17,9 +17,9 @@ Airflow runs 6 dags, one of them is task gropuing:
 - fpl_week_data_postgre; goes through the week files for each player and inserts data to player_week_ft table in postgre
 
 
-Structure of tables (table diagram is available in git folder):
+## Structure of tables (table diagram is available in git folder)
 
-<img src="/images/Er_diagram.png" alt="Alt text" title="Optional title">
+<img src="/images/Er-diagram.png" alt="postgre db structure" title="ER diagram">
 
 mylo.team_dm
 - id int4 NOT NULL
@@ -72,7 +72,7 @@ mylo.player_week_ft
 - value_ply numeric(18, 2) NULL
 - CONSTRAINT pk_player_week_id PRIMARY KEY (element_, round_gw)
 
-files are separated in 2 groups:
+## Files are separated in 2 groups
 - python code for airflow dags
 - python code for flask representation of data
 
@@ -80,6 +80,10 @@ files are separated in 2 groups:
 - sql_queries.py; containts all sql queris used in the python project
 - includes.py; contains all functions needed for transfering data from fantasy premier league api to postgre db
 - pull-fpl-data-s3-postgree.py; contains airflow dags
+
+### Dag flow
+
+<img src="/images/fpl-dag.png" alt="photo of tasks in dag" title="Dag flow">
 
 ## Python code for flask
 - run.py; running the flask server
