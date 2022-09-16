@@ -83,7 +83,7 @@ mylo.player_week_ft
 
 ### Dag flow
 
-<img src="/images/fpl-dag.png" alt="photo of tasks in dag" title="Dag flow">
+<img src="/images/fpl-dag-v1.png" alt="photo of tasks in dag" title="Dag flow">
 
 ## Python code for flask
 - run.py; running the flask server
