@@ -19,6 +19,8 @@ Airflow runs 6 dags, one of them is task gropuing:
 
 Structure of tables (table diagram is available in git folder):
 
+<img src="/images/Er_diagram.png" alt="Alt text" title="Optional title">
+
 mylo.team_dm
 - id int4 NOT NULL
 - "name" varchar(30) NULL
