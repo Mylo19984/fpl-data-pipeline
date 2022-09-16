@@ -1,16 +1,18 @@
 # fpl-data-pipeline
 
-This project is made to automatize the analysis of the fantasy premier league data from theirs site.
+This project is made to automatize the analysis of the fantasy premier league data from https://fantasy.premierleague.com site.
+
+Final user will get the overview of the best performing players in the current season.
 
 Project is consisted of:
 - python code
-- airflow run localy on docker
+- airflow run locally on docker
 - aws s3 bucket
-- aws rds postgree db
+- aws rds postgre db
 
-Airflow runs 6 dags, one of them is task gropuing:
+Airflow runs 6 dags, one of them is task grouping:
 - created_db; created schema and necessary tables
-- fpl_ply_get_id; gets the last id from players json; thus. da li je ovo potrebno?
+- fpl_ply_get_id; gets the last id from players json
 - pull_data_to_s3 [fpl_general_data_s3, fpl_ply_week_data_s3]; pulls data from fpl api to s3 buckets
 - fpl_team_data_postgre; inserts data from json file to team_dm table in postgre
 - fpl_general_data_postgre; inserts data from json file to player_dm table in postgre
@@ -91,6 +93,13 @@ mylo.player_week_ft
 - routes.py; defines routes of flask server
 - layout.html; defines basi template of html structure
 - dashboard.html; shows fantasy premeir league data in charts and table
+
+When postgre db is loaded with data from fpl DAG; flask server can be started and final overview of the data will pre presented to the user.
+
+Data is shown through 3 graphs. Photo below.
+
+<img src="/images/fpl-dash.png" alt="photo of the dashboard site" title="Fpl dashboard">
+
 
 ### In development
 
