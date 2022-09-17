@@ -10,6 +10,11 @@ Project is consisted of:
 - aws s3 bucket
 - aws rds postgre db
 
+
+### Dag flow
+
+<img src="/images/fpl-dag.png" alt="photo of tasks in dag" title="Dag flow">
+
 Airflow runs 6 dags, one of them is task grouping:
 - created_db; created schema and necessary tables
 - fpl_ply_get_id; gets the last id from players json
@@ -83,9 +88,6 @@ mylo.player_week_ft
 - includes.py; contains all functions needed for transfering data from fantasy premier league api to postgre db
 - pull-fpl-data-s3-postgree.py; contains airflow dags
 
-### Dag flow
-
-<img src="/images/fpl-dag.png" alt="photo of tasks in dag" title="Dag flow">
 
 ## Python code for flask
 - run.py; running the flask server

@@ -1,6 +1,5 @@
 import json
 import requests
-import pandas as pd
 import boto3
 from sqlalchemy import create_engine
 import logging
@@ -12,7 +11,7 @@ import sql_queries
 task_logger = logging.getLogger('airflow.task')
 
 config_obj = configparser.ConfigParser()
-config_obj.read('/opt/airflow/dags/config.ini')
+config_obj.read('config.ini')
 # /opt/airflow/dags/
 db_param = config_obj["postgresql"]
 aws_user = config_obj["aws"]
@@ -66,7 +65,7 @@ def write_players_week_data_to_s3_bucket(ti, num_players=10) -> None:
     task_logger.info('Copying json ply data to s3')
     num_s3_ply_data = 0
 
-    # !!!
+    # !!! dodati preskakanje ovog koraka.
     for id in range(1,10):
         response_ply = requests.get(F'https://fantasy.premierleague.com/api/element-summary/{id}/')
         dd_ply = json.loads(response_ply.text)
@@ -160,13 +159,6 @@ def ply_weeks_s3_to_postgre(**kwargs):
         engine = create_engine(
             F'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}')
 
-        #s3 = boto3.resource(
-        #    service_name='s3',
-        #    region_name=aws_user['region'],
-        #    aws_access_key_id=aws_user['acc_key'],
-        #    aws_secret_access_key=aws_user['secret_acc_key']
-        #)
-
         s3 = boto3.client(
             's3',
             region_name=aws_user['region'],
@@ -176,15 +168,15 @@ def ply_weeks_s3_to_postgre(**kwargs):
 
         num_players = ti.xcom_pull(task_ids='fpl_ply_get_id')
 
-        for id in range(1,num_players):
+        task_logger.info('Postgrees inserting plyr data started')
+        num_postgre_week_data = 0
+
+        for id in range(1, num_players):
             #s3.Bucket('mylosh').download_file(F'ply_data_gw/{id}.json', F'{id}.json')
             #f = open(F'{id}.json')
             obj = s3.get_object(Bucket='mylosh', Key=F'ply_data_gw/{id}.json')
             j = json.loads(obj['Body'].read())
             data = j['history']
-
-            task_logger.info('Postgrees inserting plyr data started')
-            num_postgre_week_data = 0
 
             for i in range(0, len(data)):
                 engine.execute(sql_queries.sql_insert_weeks_postgree,
@@ -201,11 +193,11 @@ def ply_weeks_s3_to_postgre(**kwargs):
                                 data[i]['value']
                                 ))
 
-                num_postgre_week_data += 1
+            num_postgre_week_data += 1
 
-            task_logger.info(F'Postgrees inserting plyr data finished, no of inserted record {num_postgre_week_data}')
-        else:
-            task_logger.info('Postgrees inserting plyr data SKIPPED')
+        task_logger.info(F'Postgrees inserting plyr data finished, no of inserted record {num_postgre_week_data}')
+    else:
+        task_logger.info('Postgrees inserting plyr data SKIPPED')
 
 
 def pull_last_ply_id():
@@ -266,83 +258,17 @@ def team_info_s3_to_postgre(**kwargs):
     else:
         task_logger.info('Postgrees inserting team general data SKIPPED')
 
-# test test
 
-def ply_info_s3_to_postgre_test():
-    # test
-    # radi ovaj model sa get_object, pa load u json. Superika. Unesi u airflow.
-    #sys.exit()
+### functions for pytest; unity testing of data
+
+def get_sala_id():
 
     engine = create_engine(
         F'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}')
 
-    s3 = boto3.client(
-        's3',
-        region_name=aws_user['region'],
-        aws_access_key_id=aws_user['acc_key'],
-        aws_secret_access_key=aws_user['secret_acc_key']
-    )
+    salah_id = engine.execute(sql_queries.sql_get_salah_id).fetchall()
 
-    obj = s3.get_object(Bucket='mylosh', Key='general_data/general_info.json')
-    j = json.loads(obj['Body'].read())['elements']
-    #print(j)
-    print(type(j))
-    print(j[0])
-    print(type(j[0]))
-
-    df = pd.json_normalize(j)
-    df['position'] = df['element_type'].map(dict_element_types)
-    #pd.options.display.max_columns = None
-
-    print(df.head(5))
+    return salah_id[0][0]
 
 
-    task_logger.info('Task finished')
-
-
-def get_plyr_week(id, wk):
-    # ne prosledjujemo wk, posto mogu da imaju manje nedelja od full
-    response_ply = requests.get(F'https://fantasy.premierleague.com/api/element-summary/{id}/')
-    dd_ply = json.loads(response_ply.text)
-    dd_ply = dd_ply['history']
-    data = pd.DataFrame()
-
-    for i in range(0,wk):
-        temp_db = pd.DataFrame.from_dict(dd_ply[i], orient='index')
-        #print(temp_db)
-        #data.append(temp_db, ignore_index=False)
-        data = pd.concat([data,temp_db], axis = 1)
-
-    data = data.transpose()
-    return data[['element', 'fixture', 'total_points', 'opponent_team', 'was_home', 'team_h_score', 'team_a_score', 'round',
-                'minutes', 'goals_scored', 'assists', 'clean_sheets', 'goals_conceded', 'own_goals', 'penalties_saved',
-                'penalties_missed', 'yellow_cards', 'red_cards', 'saves', 'bonus', 'bps', 'influence', 'creativity', 'threat',
-                'ict_index', 'value' ]]
-
-
-def test_insert():
-    engine = create_engine(
-        F'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}')
-
-    engine.execute("""INSERT INTO mylo.player_weeks_data_test (el_, fixture) VALUES
-    (%s, %s)""", (1, 322))
-
-
-def write_to_postgree_delete():
-
-    engine = create_engine('postgresql+psycopg2://user:password@hostname/database_name')
-    engine.execute("""DROP TABLE IF EXISTS player_weeks;""")
-
-
-def write_to_json_file(path, fileName, data):
-    filePathNameWExt = path + '/' + fileName + '.json'
-    with open(filePathNameWExt, 'w') as fp:
-        json.dump(data, fp)
-
-
-def player_week_json_to_local(num_players=10):
-    for id in range(0,num_players):
-        response_ply = requests.get(F'https://fantasy.premierleague.com/api/element-summary/{id}/')
-        dd_ply = json.loads(response_ply.text)
-        # this path is ok for local python ./data/ it is not for dags, because of docker
-        write_to_json_file('/opt/airflow/dags/data', F'{id}', dd_ply)
+### kreirati jos 2-3 testa cisto da se vidi logika, proveriti takodje sta sve pise na ovom pyCharm linku.
