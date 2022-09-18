@@ -5,7 +5,7 @@ This project is made to automatize analysis of the fantasy premier league data f
 Final user will get the overview of the best performing players in the current season.
 
 Project is consisted of:
-- python code
+- python code (packages used: flask, flask_sqlalchemy, psycopg2-binary, pandas, requests, boto3)
 - airflow run locally on docker
 - aws s3 bucket
 - aws rds postgre db
@@ -79,7 +79,7 @@ mylo.player_week_ft
 - value_ply numeric(18, 2) NULL
 - CONSTRAINT pk_player_week_id PRIMARY KEY (element_, round_gw)
 
-## Files are separated in 2 groups
+## Files are separated in few groups
 - python code for airflow dags
 - python code for flask representation of data
 
@@ -88,6 +88,13 @@ mylo.player_week_ft
 - includes.py; contains all functions needed for transfering data from fantasy premier league api to postgre db
 - pull-fpl-data-s3-postgree.py; contains airflow dags
 
+### Includes.py
+This python file has 3 variables which are used on Airflow:
+- gen_data_insert bool
+- team_data_insert bool
+- week_data_insert bool
+
+All of them are signalling if inserting of data should be done or skipped.
 
 ## Python code for flask
 - run.py; running the flask server
@@ -98,6 +105,9 @@ mylo.player_week_ft
 
 ## Config file
 - config.ini; must contain the postgresql parameters, and was parameters thus that s3 bucket and postgre rds can work
+
+## Test file
+- test_includes.py; running tests: to check if The Egyptian King is the db, and to check that all weeks have good join.
 
 ## User guide
 
@@ -116,11 +126,13 @@ Data is shown through 3 graphs. Photo below.
 
 ### In development
 
-- switching table to: https://datatables.net
+- switching table presentation to: https://datatables.net
 - adding dynamic dashboards; thus person can filter the players by position
 - adding fixtures tables, and fixture analysis for top players
+- adding the possibility of user to choose which weeks will dag automatically pick up
 
 ### In future plans
 
 - web scraping data regarding xG and xI per games
 - web scraping data regarding the game statistics of each player (shots on goal, crosses, passes and etc.)
+- making final flask app for fantasy players as separate project; since they are not that into IT, and should be easier for use. Thus one project for myself, and practicing Data engineering, and another one for the final users

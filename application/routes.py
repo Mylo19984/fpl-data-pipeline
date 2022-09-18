@@ -1,7 +1,7 @@
 from application import app
 from flask import render_template
-from application.form import UserInputForm
-from application.models import FplPlayerData
+#from application.form import UserInputForm
+#from application.models import FplPlayerData
 from sqlalchemy import text
 from application import db
 import sql_queries

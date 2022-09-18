@@ -13,8 +13,8 @@ import sql_queries
 task_logger = logging.getLogger('airflow.task')
 
 config_obj = configparser.ConfigParser()
-config_obj.read('config.ini')
-# /opt/airflow/dags/
+config_obj.read('/opt/airflow/dags/config.ini')
+# must be added for dag to work, he wont be able to find the file /opt/airflow/dags/
 db_param = config_obj["postgresql"]
 aws_user = config_obj["aws"]
 db_user = db_param['user']
