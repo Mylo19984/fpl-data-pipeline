@@ -1,6 +1,6 @@
 # fpl-data-pipeline
 
-This project is made to automatize the analysis of the fantasy premier league data from https://fantasy.premierleague.com site.
+This project is made to automatize analysis of the fantasy premier league data from https://fantasy.premierleague.com site. Since I am huge fan of fantasy/real life gaming, my goal is to make the git project which can help players all around the world to optimize their ppl decision making. 
 
 Final user will get the overview of the best performing players in the current season.
 
@@ -96,7 +96,18 @@ mylo.player_week_ft
 - layout.html; defines basi template of html structure
 - dashboard.html; shows fantasy premeir league data in charts and table
 
-When postgre db is loaded with data from fpl DAG; flask server can be started and final overview of the data will pre presented to the user.
+## Config file
+- config.ini; must contain the postgresql parameters, and was parameters thus that s3 bucket and postgre rds can work
+
+## User guide
+
+- docker and docker compose must be installed. Attached is also the docker-compose.yaml which I have used for airflow containers.
+- in the airflow folder, there must be 3 folders created: tags, logs, plugins. The most important folder is dags, where python dags files should be placed. 3 of them: sql_queries.py, includes.py, pull-fpl-data-s3-postgree.py.
+- pull-fpl-data-s3-postgree_v1 is the name of the dag which should be run. It is available on link: http://localhost:8080.
+- flask application is started via run.py file. It is available on link: http://127.0.0.1:5000
+
+
+When postgre db is loaded with data from fpl ; flask server can be started and final overview of the data will pre presented to the user.
 
 Data is shown through 3 graphs. Photo below.
 
