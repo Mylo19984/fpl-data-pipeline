@@ -131,7 +131,7 @@ Data is shown through 3 graphs. Photo below.
 - adding fixtures tables, and fixture analysis for top players
 - adding the possibility of user to choose which weeks will dag automatically pick up
 
-### In future plans
+### Future plans
 
 - web scraping data regarding xG and xI per games
 - web scraping data regarding the game statistics of each player (shots on goal, crosses, passes and etc.)
