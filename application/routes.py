@@ -11,6 +11,7 @@ import sql_queries
 #    entries = FplPlayerData.query.order_by(FplPlayerData.form.desc()).limit(9).all()
 #    return render_template('index.html', entries=entries)
 
+"""
 @app.route('/layout')
 def layout():
     return render_template('layout.html', title='Layouuuts')
@@ -19,6 +20,7 @@ def layout():
 def add():
     form = UserInputForm()
     return render_template('add.html', title='Addd', form=form)
+"""
 
 @app.route('/')
 def dashboard():
