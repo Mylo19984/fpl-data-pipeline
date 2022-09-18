@@ -1,4 +1,6 @@
 import json
+
+import pandas
 import requests
 import boto3
 from sqlalchemy import create_engine
@@ -271,4 +273,11 @@ def get_sala_id():
     return salah_id[0][0]
 
 
-### kreirati jos 2-3 testa cisto da se vidi logika, proveriti takodje sta sve pise na ovom pyCharm linku.
+def ply_weeks_join_quality():
+
+    engine = create_engine(
+        F'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}')
+
+    number_of_not_joined_week_rows = engine.execute(sql_queries.sql_control_of_joins, engine).fetchall()
+
+    return number_of_not_joined_week_rows[0][0]
