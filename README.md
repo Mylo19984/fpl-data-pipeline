@@ -28,7 +28,7 @@ Airflow runs 6 dags, one of them is task grouping:
 
 <img src="/images/Er-diagram.png" alt="postgre db structure" title="ER diagram">
 
-mylo.team_dm
+mylo.team_dm (contains basic data about teams)
 - id int4 NOT NULL
 - "name" varchar(30) NULL
 - short_name varchar(10) NULL
@@ -39,7 +39,7 @@ mylo.team_dm
 - code int4 NULL
 - CONSTRAINT pk_team_id PRIMARY KEY (id)
 
-mylo.player_dm
+mylo.player_dm (contains basic data about players)
 - id int4 NOT NULL
 - "name" varchar(30) NULL
 - surname varchar(30) NULL
@@ -50,7 +50,7 @@ mylo.player_dm
 - "position" varchar(5) NULL
 - CONSTRAINT pk_player_id PRIMARY KEY (id)
 
-mylo.player_week_ft 
+mylo.player_week_ft (contains results of players game weeks)
 - element_ int4 NOT NULL
 - fixture int4 NULL
 - total_points int4 NULL
@@ -78,6 +78,8 @@ mylo.player_week_ft
 - ict_index varchar(10) NULL
 - value_ply numeric(18, 2) NULL
 - CONSTRAINT pk_player_week_id PRIMARY KEY (element_, round_gw)
+
+One extra table is available in ED - mylo.player_stat_dm; I am currently working into filling this data into fact table; but joining data is complex, thus it is in the development stage.
 
 ## Files are separated in few groups
 - code for airflow dags
@@ -111,7 +113,7 @@ All of them are signalling if inserting of data should be done or skipped.
 ## Test file
 - test_includes.py; running tests: to check if The Egyptian King is the db, and to check that all weeks have good join.
 
-## Code for scanning understat
+## Code for scrapping understat
 - manually_scrapp_s3; used to scrape statistic data from understat via selenium. Since I am working on mac M1, I couldn't manage to place this chrome driver in airflow docker, thus it is separate file
 
 ## User guide
@@ -136,9 +138,9 @@ Data is shown through 3 graphs. Photo below.
 - adding dynamic dashboards; thus person can filter the players by position
 - adding fixtures tables, and fixture analysis for top players
 - adding the possibility of user to choose which weeks will dag automatically pick up
+- web scraping data regarding xG and xI per games
+- web scraping data regarding the game statistics of each player (shots on goal, crosses, passes and etc.)
 
 ### Future plans
 
-- web scraping data regarding xG and xI per games
-- web scraping data regarding the game statistics of each player (shots on goal, crosses, passes and etc.)
 - making final flask app for fantasy players as separate project; since they are not that into IT, and should be easier for use. Thus one project for myself, and practicing Data engineering, and another one for the final users
