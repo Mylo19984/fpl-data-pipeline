@@ -187,5 +187,32 @@ detailed_ply_data_per_week = '''
         order by total_points desc limit 15;
     '''
 
+sql_get_salah_id = """
+                SELECT id from mylo.player_dm where surname = 'Salah' 
+                """
 
+sql_control_of_joins = """
+                        SELECT count(id) from mylo.player_week_ft pw  
+                        left join mylo.player_dm pd 
+                        ON pd.id = pw.element_ where round_gw is null 
+                        """
 
+sql_create_players_x_stats = """
+                        CREATE TABLE IF NOT EXISTS 
+                        mylo.player_stats_dm (id integer, full_name varchar(60), min_played integer, key_passes integer,
+                        assists integer, shots integer, xg decimal(18,2), xa decimal(18,2), match_id integer,
+                        CONSTRAINT pk_player_stats_id primary key (id, match_id)) 
+                        """
+
+sql_insert_players_x_stats = """INSERT INTO mylo.player_stats_dm
+                (id, full_name, min_played, key_passes, assists, shots, xg, xa, match_id)
+                VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id, match_id) DO UPDATE SET 
+                                    full_name = %s,
+                                    min_played = %s,
+                                    key_passes = %s,
+                                    assists = %s,
+                                    shots = %s,
+                                    xg = %s,
+                                    xa = %s
+                            """

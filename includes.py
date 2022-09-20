@@ -12,6 +12,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from io import StringIO
+import csv
+
 
 task_logger = logging.getLogger('airflow.task')
 
@@ -44,6 +46,7 @@ def create_schema_tables_postgre() -> None:
     conn.execute(sql_queries.sql_create_teams_data)
     conn.execute(sql_queries.sql_create_players_data)
     conn.execute(sql_queries.sql_create_players_week)
+    conn.execute(sql_queries.sql_create_players_x_stats)
 
     conn.close()
 
@@ -265,7 +268,7 @@ def team_info_s3_to_postgre(**kwargs) -> None:
         task_logger.info('Postgrees inserting team general data SKIPPED')
 
 
-def scrapp_xg_xa_uderstat(match_str: list) -> None:
+def scrapp_xg_xa_uderstat(match_str: str) -> None:
     ''' Web scraping matches from the site to gain data about xG, xA and other statistical data.
 
     :param match_str: list of match ids to scrap
@@ -296,6 +299,7 @@ def scrapp_xg_xa_uderstat(match_str: list) -> None:
     df_away_f = df_away.reset_index()
 
     df_final = pd.concat([df_home_f, df_away_f])
+    df_final = df_final[['player_id', 'player', 'time', 'key_passes', 'assists', 'shots', 'xG', 'xA']]
     df_final['match_id'] = match_str
 
     saving_scrapped_data_s3(df_final)
@@ -365,9 +369,58 @@ def saving_scrapped_data_s3(df_scrapped_data) -> None:
     csv_buffer = StringIO()
     df_scrapped_data.to_csv(csv_buffer)
     match = df_scrapped_data['match_id'].iloc[0]
-    s3.Object('mylosh', F"scrapp_stat_data/{match}").put(Body=csv_buffer.getvalue())
+    s3.Object('mylosh', F"scrapp_stat_data/{match}.csv").put(Body=csv_buffer.getvalue())
 
     task_logger.info('Saving scrapped data to s3 finished')
+
+
+def ply_stats_s3_to_postgre(**kwargs) -> None:
+    """ Inserts players general data from s3 file to postgre db, table mylo.player_general
+
+    :param kwargs: data_flow parameter, thus function can know if some code should be skipped
+    """
+
+    if int(kwargs['data_flow']) == 1:
+
+        engine = create_engine(
+            F'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}')
+
+        s3 = boto3.client(
+            service_name='s3',
+            region_name=aws_user['region'],
+            aws_access_key_id=aws_user['acc_key'],
+            aws_secret_access_key=aws_user['secret_acc_key']
+        )
+
+        #data_bucket = s3.Bucket('s3://mylosh/scrapp_stat_data/').objects.all()
+
+        data_bucket = s3.list_objects(Bucket = 'mylosh', Prefix='scrapp_stat_data/')['Contents']
+
+        num_postgre_ply_data = 0
+
+        for data in data_bucket:
+            if data['Size'] > 0:
+                print(data)
+                obj = s3.get_object(Bucket='mylosh', Key=data['Key'])
+                body = obj['Body']
+                csv_string = body.read().decode('utf-8')
+
+                spamreader = csv.reader(StringIO(csv_string), quotechar='|')
+                next(spamreader)
+                for row in spamreader:
+                    print(row)
+                    engine.execute(sql_queries.sql_insert_players_x_stats,
+                               (row[1], row[2], row[3], row[4],
+                                row[5], row[6], row[7], row[8], row[9],
+                                row[2], row[3], row[4], row[5],
+                                row[6], row[7], row[8]))
+
+
+                    num_postgre_ply_data += 1
+
+        task_logger.info(F'Postgrees inserting stats data finished, no of inserted records {num_postgre_ply_data}')
+    else:
+        task_logger.info('Postgrees inserting stats data SKIPPED')
 
 
 ### functions for pytest; unity testing of data
