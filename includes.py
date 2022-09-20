@@ -1,6 +1,4 @@
 import json
-
-import pandas
 import requests
 import boto3
 from sqlalchemy import create_engine
@@ -9,12 +7,18 @@ import time
 import configparser
 import pandas as pd
 import sql_queries
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from io import StringIO
 
 task_logger = logging.getLogger('airflow.task')
 
 config_obj = configparser.ConfigParser()
-config_obj.read('/opt/airflow/dags/config.ini')
-# must be added for dag to work, he wont be able to find the file /opt/airflow/dags/
+config_obj.read('config.ini')
+#config_obj.read('/opt/airflow/dags/config.ini')
+# must be added for dag to work, he wont be able to find the file - /opt/airflow/dags/
 db_param = config_obj["postgresql"]
 aws_user = config_obj["aws"]
 db_user = db_param['user']
@@ -42,7 +46,6 @@ def create_schema_tables_postgre():
     conn.execute(sql_queries.sql_create_players_data)
     conn.execute(sql_queries.sql_create_players_week)
 
-
     conn.close()
 
     task_logger.info('Finished schema and scripts')
@@ -67,8 +70,8 @@ def write_players_week_data_to_s3_bucket(ti, num_players=10) -> None:
     task_logger.info('Copying json ply data to s3')
     num_s3_ply_data = 0
 
-    # !!! dodati preskakanje ovog koraka.
-    for id in range(1,10):
+    # !!! add data flow
+    for id in range(1,num_players()):
         response_ply = requests.get(F'https://fantasy.premierleague.com/api/element-summary/{id}/')
         dd_ply = json.loads(response_ply.text)
         time.sleep(0.2)
@@ -261,9 +264,122 @@ def team_info_s3_to_postgre(**kwargs):
         task_logger.info('Postgrees inserting team general data SKIPPED')
 
 
+def scrapp_xg_xa_uderstat(match_str) -> None:
+    '''
+    Web scraping matches from the site to gain data about xG, xA and other statistical data.
+
+
+    :return: currently prints the xG, xA, passes, shots.. The idea is to place this data in postgre
+    '''
+
+    base_url = 'https://understat.com/match/'
+    #match = '18242'
+    url = base_url + match_str
+
+    res = requests.get(url)
+    soup = BeautifulSoup(res.content, 'lxml')
+    scripts = soup.find_all('script')
+    strings = scripts[2].string
+
+    ind_start = strings.index("('") + 2
+    ind_end = strings.index("')")
+    json_data = strings[ind_start:ind_end]
+    json_data = json_data.encode('utf8').decode('unicode_escape')
+
+    data = json.loads(json_data)
+
+    # load home data
+    df_home = pd.DataFrame.from_dict(data['h'], orient='index')
+    df_home_f = df_home.reset_index()
+
+    # load away data
+    df_away = pd.DataFrame.from_dict(data['a'], orient='index')
+    df_away_f = df_away.reset_index()
+
+    df_final = df_home_f.append(df_away_f, ignore_index=True)
+    df_final['match_id'] = match_str
+
+    saving_scrapped_data_s3(df_final)
+
+    #print(df_final[['player_id', 'player', 'time', 'key_passes', 'assists', 'shots', 'xG', 'xA', 'match_id']].head())
+
+
+def get_matches_ids_4_weeks(weeks=4):
+    ''' Function goes to the understat and picks up (through selenium) last 4 weeks of data
+    
+    :param weeks: number of weeks to pull from understat premier league
+    :return: List with match ids
+    '''
+
+    options = Options()
+    options = webdriver.ChromeOptions()
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--window-size=800,600")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--headless")
+    driver = webdriver.Chrome(options=options)
+    driver.get('https://understat.com/league/EPL')
+
+    full_list = []
+
+    for i in range(1, (weeks+1)):
+        print(F'Number of iteration {i}')
+        #print('Changing page')
+
+        folder = driver.find_element(By.XPATH, "//button[@class='calendar-prev']")
+        folder.click()
+
+        #print('Page changed')
+
+        # links = driver.find_elements(By.TAG_NAME, 'a')
+        links = driver.find_elements(By.XPATH, "//*[@class='match-info']")
+
+        #print('Getting elements in the list')
+
+        list = [f.get_attribute('href').split('match/')[1] for f in links if f.get_attribute('href') is not None]
+
+        #print('Elemetns in the list')
+
+        for l in list:
+            full_list.append(l)
+
+    return full_list
+
+
+def saving_scrapped_data_s3(df_scrapped_data):
+    """
+
+
+    :param df_scrapped_data:
+    :return:
+    """
+
+    s3 = boto3.resource(
+        service_name='s3',
+        region_name=aws_user['region'],
+        aws_access_key_id=aws_user['acc_key'],
+        aws_secret_access_key=aws_user['secret_acc_key']
+    )
+
+    task_logger.info('Saving scrapped data to s3 started')
+
+    csv_buffer = StringIO()
+    df_scrapped_data.to_csv(csv_buffer)
+    match = df_scrapped_data['match_id'].iloc[0]
+    s3.Object('mylosh', F"scrapp_stat_data/{match}").put(Body=csv_buffer.getvalue())
+
+    task_logger.info('Saving scrapped data to s3 finished')
+
+
 ### functions for pytest; unity testing of data
 
-def get_sala_id():
+def get_salah_id():
+    """ Controls if the Salah id is present in postgre db
+
+
+        Returns the id of M. Salah from player_dm table
+    """
 
     engine = create_engine(
         F'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}')
@@ -274,6 +390,11 @@ def get_sala_id():
 
 
 def ply_weeks_join_quality():
+    """ Controls if the all rows in player_week_ft table have joins
+
+
+        Returns the number of rows from player_week_ft which doesnt have join
+    """
 
     engine = create_engine(
         F'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}')
