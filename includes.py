@@ -308,7 +308,8 @@ def scrapp_xg_xa_uderstat(match_str: str) -> None:
 
 
 def get_matches_ids_4_weeks(weeks=4) -> list:
-    ''' Function goes to the understat and picks up (through selenium) last 4 weeks of data
+    ''' Function goes to the understat website and picks up (through selenium) last 4 weeks of data
+    There is the part of the code which is automatically changing the pages and picking up the wanted data -> match ids
 
     :param weeks: number of weeks to pull from understat premier league
 
@@ -334,16 +335,8 @@ def get_matches_ids_4_weeks(weeks=4) -> list:
         folder = driver.find_element(By.XPATH, "//button[@class='calendar-prev']")
         folder.click()
 
-        #print('Page changed')
-
-        # links = driver.find_elements(By.TAG_NAME, 'a')
         links = driver.find_elements(By.XPATH, "//*[@class='match-info']")
-
-        #print('Getting elements in the list')
-
         list = [f.get_attribute('href').split('match/')[1] for f in links if f.get_attribute('href') is not None]
-
-        #print('Elemetns in the list')
 
         for l in list:
             full_list.append(l)
