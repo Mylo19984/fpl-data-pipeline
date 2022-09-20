@@ -5,7 +5,7 @@ This project is made to automatize analysis of the fantasy premier league data f
 Final user will get the overview of the best performing players in the current season.
 
 Project is consisted of:
-- python code (packages used: flask, flask_sqlalchemy, psycopg2-binary, pandas, requests, boto3)
+- python code (packages used: flask, flask_sqlalchemy, psycopg2-binary, pandas, requests, boto3, selenium)
 - airflow run locally on docker
 - aws s3 bucket
 - aws rds postgre db
@@ -80,10 +80,12 @@ mylo.player_week_ft
 - CONSTRAINT pk_player_week_id PRIMARY KEY (element_, round_gw)
 
 ## Files are separated in few groups
-- python code for airflow dags
-- python code for flask representation of data
+- code for airflow dags
+- code for flask representation of data
+- code for unit tests
+- code for scrapping understat premier league data
 
-## Python code for airflow dags
+## Code for airflow dags
 - sql_queries.py; containts all sql queris used in the python project
 - includes.py; contains all functions needed for transfering data from fantasy premier league api to postgre db
 - pull-fpl-data-s3-postgree.py; contains airflow dags
@@ -96,7 +98,7 @@ This python file has 3 variables which are used on Airflow:
 
 All of them are signalling if inserting of data should be done or skipped.
 
-## Python code for flask
+## Code for flask
 - run.py; running the flask server
 - __init__.py; initzialize flask app and db connection
 - routes.py; defines routes of flask server
@@ -109,12 +111,16 @@ All of them are signalling if inserting of data should be done or skipped.
 ## Test file
 - test_includes.py; running tests: to check if The Egyptian King is the db, and to check that all weeks have good join.
 
+## Code for scanning understat
+- manually_scrapp_s3; used to scrape statistic data from understat via selenium. Since I am working on mac M1, I couldn't manage to place this chrome driver in airflow docker, thus it is separate file
+
 ## User guide
 
 - docker and docker compose must be installed. Attached is also the docker-compose.yaml which I have used for airflow containers.
 - in the airflow folder, there must be 3 folders created: tags, logs, plugins. The most important folder is dags, where python dags files should be placed. 3 of them: sql_queries.py, includes.py, pull-fpl-data-s3-postgree.py.
 - pull-fpl-data-s3-postgree_v1 is the name of the dag which should be run. It is available on link: http://localhost:8080.
-- flask application is started via run.py file. It is available on link: http://127.0.0.1:5000
+- manually_scrapp_s3; used to scrape statistic data from understat via selenium, and place the files in s3 bucket.
+- flask application is started via run.py file. It is available on link: http://127.0.0.1:5000.
 
 
 When postgre db is loaded with data from fpl ; flask server can be started and final overview of the data will pre presented to the user.
