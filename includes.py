@@ -29,11 +29,10 @@ db_name = db_param['db']
 dict_element_types = {1:'gk', 2:'def', 3:'mid', 4:'fwd'}
 
 
-def create_schema_tables_postgre():
-    # Creates the database structure in postgre db
-    #
-    #
-    # Returns nothing just runs scripts
+def create_schema_tables_postgre() -> None:
+    """ Creates the database structure in postgre db
+
+    """
 
     engine = create_engine(
         F'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}')
@@ -52,10 +51,13 @@ def create_schema_tables_postgre():
 
 
 def write_players_week_data_to_s3_bucket(ti, num_players=10) -> None:
-    # Writes weekly players data from fpl api to s3
-    #
-    #
-    # Returns nothing just copying files
+    """ Writes weekly players data from fpl api to s3
+
+    :param ti: used for xcom pull, task_instance
+
+    :param num_players: used to control number of players pulled to s3, for testing purpose
+    """
+
 
     s3 = boto3.resource(
         service_name='s3',
@@ -85,10 +87,9 @@ def write_players_week_data_to_s3_bucket(ti, num_players=10) -> None:
 
 
 def write_general_data_to_s3_bucket() -> None:
-    # Writes general data about players from fpl api to s3
-    #
-    #
-    # Returns nothing just copying files
+    """ Writes general data about players from fpl api to s3
+
+    """
 
     s3 = boto3.resource(
         service_name='s3',
@@ -110,11 +111,11 @@ def write_general_data_to_s3_bucket() -> None:
     task_logger.info('Pulling general data finished')
 
 
-def ply_info_s3_to_postgre(**kwargs):
-    # Inserts players general data from s3 file to postgre db, table mylo.player_general
-    #
-    #
-    # Returns nothing, just inserting the file in postgre db
+def ply_info_s3_to_postgre(**kwargs) -> None:
+    """ Inserts players general data from s3 file to postgre db, table mylo.player_general
+
+    :param kwargs: data_flow parameter, thus function can know if some code should be skipped
+    """
 
     if int(kwargs['data_flow']) == 1:
 
@@ -151,11 +152,11 @@ def ply_info_s3_to_postgre(**kwargs):
         task_logger.info('Postgrees inserting general data SKIPPED')
 
 
-def ply_weeks_s3_to_postgre(**kwargs):
-    # Inserts players weekly data from s3 file to postgre db, table mylo.player_general
-    #
-    #
-    # Returns nothing, just inserting the file in postgre db
+def ply_weeks_s3_to_postgre(**kwargs) -> None:
+    """ Inserts players weekly data from s3 file to postgre db, table mylo.player_general
+
+    :param kwargs: data_flow parameter, thus function can know if some code should be skipped
+    """
 
     ti = kwargs['ti']
 
@@ -205,11 +206,11 @@ def ply_weeks_s3_to_postgre(**kwargs):
         task_logger.info('Postgrees inserting plyr data SKIPPED')
 
 
-def pull_last_ply_id():
-    # Pulls the number of players from general data, thus it can be used for getting the weekly players data
-    #
-    #
-    # Returns the highest player id
+def pull_last_ply_id() -> int:
+    """ Pulls the number of players from general data, thus it can be used for getting the weekly players data
+
+    :return: Returns the highest player id
+    """
 
     s3 = boto3.resource(
         service_name='s3',
@@ -225,11 +226,11 @@ def pull_last_ply_id():
     return data['elements'][-1]['id']
 
 
-def team_info_s3_to_postgre(**kwargs):
-    # Inserts players general data from s3 file to postgre db, table mylo.player_general
-    #
-    #
-    # Returns nothing, just inserting the file in postgre db
+def team_info_s3_to_postgre(**kwargs) -> None:
+    """ Inserts players general data from s3 file to postgre db, table mylo.player_general
+
+    :param kwargs: data_flow parameter, thus function can know if some code should be skipped
+    """
 
     if int(kwargs['data_flow']) == 1:
 
@@ -264,12 +265,10 @@ def team_info_s3_to_postgre(**kwargs):
         task_logger.info('Postgrees inserting team general data SKIPPED')
 
 
-def scrapp_xg_xa_uderstat(match_str) -> None:
-    '''
-    Web scraping matches from the site to gain data about xG, xA and other statistical data.
+def scrapp_xg_xa_uderstat(match_str: list) -> None:
+    ''' Web scraping matches from the site to gain data about xG, xA and other statistical data.
 
-
-    :return: currently prints the xG, xA, passes, shots.. The idea is to place this data in postgre
+    :param match_str: list of match ids to scrap
     '''
 
     base_url = 'https://understat.com/match/'
@@ -296,7 +295,7 @@ def scrapp_xg_xa_uderstat(match_str) -> None:
     df_away = pd.DataFrame.from_dict(data['a'], orient='index')
     df_away_f = df_away.reset_index()
 
-    df_final = df_home_f.append(df_away_f, ignore_index=True)
+    df_final = pd.concat([df_home_f, df_away_f])
     df_final['match_id'] = match_str
 
     saving_scrapped_data_s3(df_final)
@@ -304,10 +303,11 @@ def scrapp_xg_xa_uderstat(match_str) -> None:
     #print(df_final[['player_id', 'player', 'time', 'key_passes', 'assists', 'shots', 'xG', 'xA', 'match_id']].head())
 
 
-def get_matches_ids_4_weeks(weeks=4):
+def get_matches_ids_4_weeks(weeks=4) -> list:
     ''' Function goes to the understat and picks up (through selenium) last 4 weeks of data
-    
+
     :param weeks: number of weeks to pull from understat premier league
+
     :return: List with match ids
     '''
 
@@ -347,12 +347,10 @@ def get_matches_ids_4_weeks(weeks=4):
     return full_list
 
 
-def saving_scrapped_data_s3(df_scrapped_data):
-    """
+def saving_scrapped_data_s3(df_scrapped_data) -> None:
+    """ Saves the scrapped data from premier league matches to s3
 
-
-    :param df_scrapped_data:
-    :return:
+    :param df_scrapped_data: dataframe with scraped match data
     """
 
     s3 = boto3.resource(
@@ -377,8 +375,7 @@ def saving_scrapped_data_s3(df_scrapped_data):
 def get_salah_id():
     """ Controls if the Salah id is present in postgre db
 
-
-        Returns the id of M. Salah from player_dm table
+    :return: Returns the id of M. Salah from player_dm table
     """
 
     engine = create_engine(
@@ -392,8 +389,7 @@ def get_salah_id():
 def ply_weeks_join_quality():
     """ Controls if the all rows in player_week_ft table have joins
 
-
-        Returns the number of rows from player_week_ft which doesnt have join
+    :return: Returns the number of rows from player_week_ft which doesnt have join
     """
 
     engine = create_engine(
