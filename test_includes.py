@@ -1,8 +1,8 @@
-from includes import get_sala_id, ply_weeks_join_quality
+from includes import get_salah_id, ply_weeks_join_quality
 
 
-def test_get_sala_id():
-    sl_id = get_sala_id()
+def test_get_salah_id():
+    sl_id = get_salah_id()
     assert sl_id == 283
 
 
