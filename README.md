@@ -90,7 +90,7 @@ One extra table is available in ED - mylo.player_stat_dm; I am currently working
 ## Code for airflow dags
 - sql_queries.py; containts all sql queris used in the python project
 - includes.py; contains all functions needed for transfering data from fantasy premier league api to postgre db
-- pull-fpl-data-s3-postgree.py; contains airflow dags
+- pull_fpl_data_s3_postgre.py; contains airflow dags
 
 ### Includes.py
 This python file has 3 variables which are used on Airflow:
@@ -119,17 +119,24 @@ All of them are signalling if inserting of data should be done or skipped.
 ## User guide
 
 - docker and docker compose must be installed. Attached is also the docker-compose.yaml which I have used for airflow containers.
-- in the airflow folder, there must be 3 folders created: tags, logs, plugins. The most important folder is dags, where python dags files should be placed. 3 of them: sql_queries.py, includes.py, pull-fpl-data-s3-postgree.py.
-- pull-fpl-data-s3-postgree_v1 is the name of the dag which should be run. The airflow ui will be available on link: http://localhost:8080.
+- in the airflow folder, there must be 3 folders created: tags, logs, plugins. The most important folder is dags, where python dags files should be placed. 3 of them: sql_queries.py, includes.py, pull-fpl-data-s3-postgre.py.
+- pull-fpl-data-s3-postgre_v1 is the name of the dag which should be run. The airflow ui will be available on link: http://localhost:8080.
 - manually_scrapp_s3 is used to scrape statistic data from understat via selenium, and place the files in s3 bucket.
 - flask application is started via run.py file. Flask web server is then available on link: http://127.0.0.1:5000.
 
 
 When postgre db is loaded with data from fpl ; flask server can be started and final overview of the data will pre presented to the user.
 
-Data is shown through 3 graphs. Photo below.
+Data is shown in 2 pages, first one has 3 graphs (2 graphs and a table). Photo below.
+- First graph shows the form of the premier league players; sorted by form desc
+- Second shows the total points and value per points (Total points / player price); sorted by total points desc
+- Third is the table which shows: points, bonus points of player, average points per 4 weeks, and points in the previous 3 matches (each match has column)
 
 <img src="/images/fpl-dash.png" alt="photo of the dashboard site" title="Fpl dashboard">
+
+Second page (Stats), has the look on general stats of the players.
+
+<img src="/images/fpl-dash-stat.png" alt="photo of the dashboard site" title="Fpl stats">
 
 
 ### In development
