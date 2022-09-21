@@ -141,13 +141,12 @@ Second page (Stats), has the look on general stats of the players.
 
 ### In development
 
+- making connection (join) between the xG, xA (stats table) and fact table; since this data should also be in fact table
 - switching table presentation to: https://datatables.net
 - adding dynamic dashboards; thus person can filter the players by position
 - adding fixtures tables, and fixture analysis for top players
 - adding the possibility of user to choose which weeks will dag automatically pick up
-- web scraping data regarding xG and xI per games
-- web scraping data regarding the game statistics of each player (shots on goal, crosses, passes and etc.)
 
 ### Future plans
 
-- making final flask app for fantasy players as separate project; since they are not that into IT, and should be easier for use. Thus one project for myself, and practicing Data engineering, and another one for the final users
+- making final flask app for fantasy players as separate project; since they are not that into IT and python and docker, thus should be easier for use. One project for myself (practicing Data engineering) and another one for the final users
