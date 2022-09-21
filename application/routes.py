@@ -11,10 +11,19 @@ import sql_queries
 #    entries = FplPlayerData.query.order_by(FplPlayerData.form.desc()).limit(9).all()
 #    return render_template('index.html', entries=entries)
 
-"""
+
 @app.route('/layout')
-def layout():
-    return render_template('layout.html', title='Layouuuts')
+def dashboard_stats():
+    result_key_pass = db.engine.execute(sql_queries.sql_stats_key_pass).fetchall()
+    fpl_data_key_passes = [row for row in result_key_pass]
+
+    result_shot = db.engine.execute(sql_queries.sql_stats_shots).fetchall()
+    fpl_data_shot = [row for row in result_shot]
+
+    return render_template('dashboard_stats.html', title='Stats', fpl_data_key_passes=fpl_data_key_passes,
+                           fpl_data_shot=fpl_data_shot)
+
+"""
 
 @app.route('/add', methods= ['GET', 'POST'])
 def add():
@@ -25,11 +34,8 @@ def add():
 @app.route('/')
 def dashboard():
     result = db.engine.execute(sql_queries.basic_ply_data).fetchall()
-    sql_total_cost = text(sql_queries.value_per_points)
-    result_total_cost = db.engine.execute(sql_total_cost).fetchall()
-    sql_general_data_overview = text(sql_queries.detailed_ply_data_per_week)
-
-    result_main_graph = db.engine.execute(sql_general_data_overview).fetchall()
+    result_total_cost = db.engine.execute(sql_queries.value_per_points).fetchall()
+    result_main_graph = db.engine.execute(sql_queries.detailed_ply_data_per_week).fetchall()
 
     fpl_data = [float(row['form']) for row in result]
     fpl_data_label = [row['name'] + ' ' + row['surname'] for row in result]
@@ -39,9 +45,9 @@ def dashboard():
     fpl_data_main_table = [row for row in result_main_graph]
     #db.dispose()
 
-    return render_template('dashboard.html', title='Dash', fpl_data = fpl_data, fpl_data_name = fpl_data_label,
-                           fpl_data_points=fpl_data_points, fpl_data_points_name=fpl_data_points_name, fpl_data_points_value=fpl_data_points_value,
-                           fpl_data_main_table=fpl_data_main_table)
+    return render_template('dashboard.html', title='Dash', fpl_data=fpl_data, fpl_data_name=fpl_data_label,
+                           fpl_data_points=fpl_data_points, fpl_data_points_name=fpl_data_points_name,
+                           fpl_data_points_value=fpl_data_points_value, fpl_data_main_table=fpl_data_main_table)
 
 
 

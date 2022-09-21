@@ -1,0 +1,75 @@
+{% extends 'layout.html'%}
+{% block content %}
+<div class="col-12 col-md-6">
+    <h6>Players with most key passes</h6>
+        <table class="table w-auto small">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">Id</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Minutes played</th>
+                    <th scope="col">Key passes</th>
+                    <th scope="col">Assists</th>
+                    <th scope="col">Shots</th>
+                    <th scope="col">Total Xg</th>
+                    <th scope="col">Total Xa</th>
+                    <th scope="col">Total Xi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in fpl_data_key_passes %}
+                        <tr>
+                            <th scope="row">{{loop.index}}</th>
+                            <td>{{ entry.full_name }}</td>
+                            <td>{{ entry.min_plyd }}</td>
+                            <td>{{ entry.key_pass }}</td>
+                            <td>{{ entry.assists }}</td>
+                            <td>{{ entry.assists }}</td>
+                            <td>{{ entry.total_xg }}</td>
+                            <td>{{ entry.total_xa }}</td>
+                            <td>{{ entry.total_xi }}</td>
+                        </tr>
+                {% endfor %}
+        </tbody>
+        </table>
+    </div>
+
+<div class="col-12 col-md-6">
+    <h6>Players with most shots</h6>
+        <table class="table w-auto small">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">Id</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Minutes played</th>
+                    <th scope="col">Key passes</th>
+                    <th scope="col">Assists</th>
+                    <th scope="col">Shots</th>
+                    <th scope="col">Total Xg</th>
+                    <th scope="col">Total Xa</th>
+                    <th scope="col">Total Xi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in fpl_data_shot %}
+                        <tr>
+                            <th scope="row">{{loop.index}}</th>
+                            <td>{{ entry.full_name }}</td>
+                            <td>{{ entry.min_plyd }}</td>
+                            <td>{{ entry.key_pass }}</td>
+                            <td>{{ entry.assists }}</td>
+                            <td>{{ entry.shots }}</td>
+                            <td>{{ entry.total_xg }}</td>
+                            <td>{{ entry.total_xa }}</td>
+                            <td>{{ entry.total_xi }}</td>
+                        </tr>
+                {% endfor %}
+        </tbody>
+        </table>
+    </div>
+
+{% block javascript %}
+
+{% endblock %}
+
+{% endblock %}

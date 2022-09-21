@@ -216,3 +216,41 @@ sql_insert_players_x_stats = """INSERT INTO mylo.player_stats_dm
                                     xg = %s,
                                     xa = %s
                             """
+
+sql_stats_key_pass = """with ct_summed_stats as (
+                                        select 
+                                        full_name
+                                        , sum(min_played) as min_plyd
+                                        , sum(key_passes) as key_pass
+                                        , sum(assists) as assists
+                                        , sum(shots) as shots
+                                        , sum(xg) as total_xg
+                                        , sum(xa) as total_xa
+                                        , sum(xg) + sum(xa) as total_xi
+                                        from mylo.player_stats_dm
+                                        group by full_name
+                                        )
+                                        
+                                        select *
+                                        from ct_summed_stats
+                                        order by key_pass desc limit 15
+                        """
+
+sql_stats_shots = """with ct_summed_stats as (
+                                        select 
+                                        full_name
+                                        , sum(min_played) as min_plyd
+                                        , sum(key_passes) as key_pass
+                                        , sum(assists) as assists
+                                        , sum(shots) as shots
+                                        , sum(xg) as total_xg
+                                        , sum(xa) as total_xa
+                                        , sum(xg) + sum(xa) as total_xi
+                                        from mylo.player_stats_dm
+                                        group by full_name
+                                        )
+
+                                        select *
+                                        from ct_summed_stats
+                                        order by shots desc limit 15
+                        """

@@ -3,7 +3,7 @@ from datetime import datetime
 from airflow.operators.python_operator import PythonOperator
 from includes import write_players_week_data_to_s3_bucket, write_general_data_to_s3_bucket, team_info_s3_to_postgre
 from includes import ply_info_s3_to_postgre, ply_weeks_s3_to_postgre, pull_last_ply_id, create_schema_tables_postgre
-import logging
+from includes import ply_stats_s3_to_postgre
 from airflow.models import Variable
 from airflow.utils.task_group import TaskGroup
 
@@ -11,14 +11,15 @@ from airflow.utils.task_group import TaskGroup
 week_data_insert = Variable.get('week_data_insert')
 ply_data_insert = Variable.get('gen_data_insert')
 team_data_insert = Variable.get('team_data_insert')
+ply_stat_data_insert = Variable.get('ply_stat_data_insert')
 
 args = {
     'owner': 'Mylo',
-    'start_date': datetime(year=2022, month=9, day=14, hour=12)
+    'start_date': datetime(year=2022, month=9, day=19, hour=12)
 }
 
 dag = DAG(
-    dag_id='pull-fpl-data-s3-postgree_v11',
+    dag_id='pull-fpl-data-postgree_v1',
     default_args=args,
     schedule_interval='@daily'
 )
@@ -67,5 +68,12 @@ with dag:
         op_kwargs={'data_flow': team_data_insert}
     )
 
+    insert_player_stats_postgre = PythonOperator(
+        task_id='ply_stats_data_postgre',
+        provide_context=True,
+        python_callable=ply_stats_s3_to_postgre,
+        op_kwargs={'data_flow': ply_stat_data_insert}
+    )
 
-create_db_schema_tables >> get_id_data >> pul_data_s3 >> insert_team_data_postgre >> insert_gen_data_postgree >> insert_week_data_postgree
+
+create_db_schema_tables >> get_id_data >> pul_data_s3 >> insert_team_data_postgre >> insert_gen_data_postgree >> insert_week_data_postgree >> insert_player_stats_postgre

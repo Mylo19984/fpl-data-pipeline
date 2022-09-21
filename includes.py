@@ -13,14 +13,19 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from io import StringIO
 import csv
+from pathlib import Path
 
 
 task_logger = logging.getLogger('airflow.task')
 
 config_obj = configparser.ConfigParser()
-config_obj.read('config.ini')
-#config_obj.read('/opt/airflow/dags/config.ini')
-# must be added for dag to work, he wont be able to find the file - /opt/airflow/dags/
+my_file = Path('/opt/airflow/dags/config.ini')
+
+if my_file.is_file():
+    config_obj.read('config.ini')
+else:
+    config_obj.read('/opt/airflow/dags/config.ini')
+
 db_param = config_obj["postgresql"]
 aws_user = config_obj["aws"]
 db_user = db_param['user']
@@ -61,7 +66,6 @@ def write_players_week_data_to_s3_bucket(ti, num_players=10) -> None:
     :param num_players: used to control number of players pulled to s3, for testing purpose
     """
 
-
     s3 = boto3.resource(
         service_name='s3',
         region_name=aws_user['region'],
@@ -69,14 +73,14 @@ def write_players_week_data_to_s3_bucket(ti, num_players=10) -> None:
         aws_secret_access_key=aws_user['secret_acc_key']
     )
 
-    # turned off thus it doesnt non stop pull the fpl data
     num_players = ti.xcom_pull(task_ids='fpl_ply_get_id')
 
     task_logger.info('Copying json ply data to s3')
     num_s3_ply_data = 0
 
     # !!! add data flow
-    for id in range(1,num_players()):
+    # !!! changed to 15; num_players
+    for id in range(1,15):
         response_ply = requests.get(F'https://fantasy.premierleague.com/api/element-summary/{id}/')
         dd_ply = json.loads(response_ply.text)
         time.sleep(0.2)
@@ -180,7 +184,8 @@ def ply_weeks_s3_to_postgre(**kwargs) -> None:
         task_logger.info('Postgrees inserting plyr data started')
         num_postgre_week_data = 0
 
-        for id in range(1, num_players):
+        # !!! changed to 30
+        for id in range(1, 30):
             #s3.Bucket('mylosh').download_file(F'ply_data_gw/{id}.json', F'{id}.json')
             #f = open(F'{id}.json')
             obj = s3.get_object(Bucket='mylosh', Key=F'ply_data_gw/{id}.json')
