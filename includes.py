@@ -22,9 +22,9 @@ config_obj = configparser.ConfigParser()
 my_file = Path('/opt/airflow/dags/config.ini')
 
 if my_file.is_file():
-    config_obj.read('config.ini')
-else:
     config_obj.read('/opt/airflow/dags/config.ini')
+else:
+    config_obj.read('config.ini')
 
 db_param = config_obj["postgresql"]
 aws_user = config_obj["aws"]
@@ -80,7 +80,7 @@ def write_players_week_data_to_s3_bucket(ti, num_players=10) -> None:
 
     # !!! add data flow
     # !!! changed to 15; num_players
-    for id in range(1,15):
+    for id in range(1, num_players):
         response_ply = requests.get(F'https://fantasy.premierleague.com/api/element-summary/{id}/')
         dd_ply = json.loads(response_ply.text)
         time.sleep(0.2)
@@ -143,20 +143,20 @@ def ply_info_s3_to_postgre(**kwargs) -> None:
         df['position'] = df['element_type'].map(dict_element_types)
         data = df.to_dict('records')
 
-        task_logger.info('Postgrees inserting general data started')
+        task_logger.info('Postgres inserting general data started')
         num_postgre_ply_data = 0
 
         for i in range(0, len(data)):
-            engine.execute(sql_queries.sql_insert_ply_gen_postgree,
+            engine.execute(sql_queries.sql_insert_ply_gen_postgre,
             (data[i]['id'], data[i]['first_name'], data[i]['second_name'], data[i]['form'], data[i]['total_points'],
             data[i]['now_cost'], data[i]['team'], data[i]['position'], data[i]['first_name'], data[i]['second_name'],
             data[i]['form'], data[i]['total_points'], data[i]['now_cost'], data[i]['team'], data[i]['position']))
 
             num_postgre_ply_data += 1
 
-        task_logger.info(F'Postgrees inserting general data finished, no of inserted records {num_postgre_ply_data}')
+        task_logger.info(F'Postgres inserting general data finished, no of inserted records {num_postgre_ply_data}')
     else:
-        task_logger.info('Postgrees inserting general data SKIPPED')
+        task_logger.info('Postgres inserting general data SKIPPED')
 
 
 def ply_weeks_s3_to_postgre(**kwargs) -> None:
@@ -181,11 +181,11 @@ def ply_weeks_s3_to_postgre(**kwargs) -> None:
 
         num_players = ti.xcom_pull(task_ids='fpl_ply_get_id')
 
-        task_logger.info('Postgrees inserting plyr data started')
+        task_logger.info('Postgres inserting plyr data started')
         num_postgre_week_data = 0
 
-        # !!! changed to 30
-        for id in range(1, 30):
+        # !!! changed to 30; num_players
+        for id in range(1, num_players):
             #s3.Bucket('mylosh').download_file(F'ply_data_gw/{id}.json', F'{id}.json')
             #f = open(F'{id}.json')
             obj = s3.get_object(Bucket='mylosh', Key=F'ply_data_gw/{id}.json')
@@ -193,7 +193,7 @@ def ply_weeks_s3_to_postgre(**kwargs) -> None:
             data = j['history']
 
             for i in range(0, len(data)):
-                engine.execute(sql_queries.sql_insert_weeks_postgree,
+                engine.execute(sql_queries.sql_insert_weeks_postgre,
                                (data[i]['element'], data[i]['fixture'], data[i]['total_points'], data[i]['opponent_team'], data[i]['was_home'],
                                 data[i]['team_h_score'], data[i]['team_a_score'], data[i]['round'], data[i]['minutes'], data[i]['goals_scored'],
                                 data[i]['assists'], data[i]['clean_sheets'], data[i]['goals_conceded'], data[i]['own_goals'], data[i]['penalties_saved'],
@@ -209,9 +209,9 @@ def ply_weeks_s3_to_postgre(**kwargs) -> None:
 
             num_postgre_week_data += 1
 
-        task_logger.info(F'Postgrees inserting plyr data finished, no of inserted record {num_postgre_week_data}')
+        task_logger.info(F'Postgres inserting plyr data finished, no of inserted record {num_postgre_week_data}')
     else:
-        task_logger.info('Postgrees inserting plyr data SKIPPED')
+        task_logger.info('Postgres inserting plyr data SKIPPED')
 
 
 def pull_last_ply_id() -> int:
@@ -256,21 +256,21 @@ def team_info_s3_to_postgre(**kwargs) -> None:
         f = open('general_info.json')
         data = json.load(f)['teams']
 
-        task_logger.info('Postgrees inserting general team data started')
+        task_logger.info('Postgres inserting general team data started')
         num_postgre_team_data = 0
 
         for i in range(0, len(data)):
-            engine.execute(sql_queries.sql_insert_teams_postgree,
+            engine.execute(sql_queries.sql_insert_teams_postgre,
             (data[i]['id'], data[i]['name'], data[i]['short_name'], data[i]['strength_attack_home'], data[i]['strength_defence_home'],
              data[i]['strength_attack_away'], data[i]['strength_defence_away'], data[i]['code'], data[i]['name'], data[i]['short_name'],
             data[i]['strength_attack_home'], data[i]['strength_defence_home'], data[i]['strength_attack_away'], data[i]['strength_defence_away'], data[i]['code']))
 
             num_postgre_team_data += 1
 
-        task_logger.info(F'Postgrees inserting general team data finished, no of inserted records {num_postgre_team_data}')
+        task_logger.info(F'Postgres inserting general team data finished, no of inserted records {num_postgre_team_data}')
 
     else:
-        task_logger.info('Postgrees inserting team general data SKIPPED')
+        task_logger.info('Postgres inserting team general data SKIPPED')
 
 
 def scrapp_xg_xa_uderstat(match_str: str) -> None:
@@ -416,9 +416,9 @@ def ply_stats_s3_to_postgre(**kwargs) -> None:
 
                     num_postgre_ply_data += 1
 
-        task_logger.info(F'Postgrees inserting stats data finished, no of inserted records {num_postgre_ply_data}')
+        task_logger.info(F'Postgres inserting stats data finished, no of inserted records {num_postgre_ply_data}')
     else:
-        task_logger.info('Postgrees inserting stats data SKIPPED')
+        task_logger.info('Postgres inserting stats data SKIPPED')
 
 
 ### functions for pytest; unity testing of data

@@ -25,7 +25,7 @@ sql_create_teams_data = """CREATE TABLE IF NOT EXISTS
         strength_def_home integer, strength_att_away integer, strength_def_away integer, code integer,
         CONSTRAINT pk_team_id primary key (id))"""
 
-sql_insert_ply_gen_postgree = """INSERT INTO mylo.player_dm (id, name, surname, form, total_points, now_costs, team_id, position) VALUES
+sql_insert_ply_gen_postgre = """INSERT INTO mylo.player_dm (id, name, surname, form, total_points, now_costs, team_id, position) VALUES
                         (%s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (id) DO UPDATE SET 
                         name = %s,
                         surname = %s,
@@ -35,7 +35,7 @@ sql_insert_ply_gen_postgree = """INSERT INTO mylo.player_dm (id, name, surname, 
                         team_id = %s,
                         position = %s"""
 
-sql_insert_weeks_postgree = """INSERT INTO mylo.player_week_ft
+sql_insert_weeks_postgre = """INSERT INTO mylo.player_week_ft
                             (element_,
                             fixture,
                             total_points,
@@ -95,7 +95,7 @@ sql_insert_weeks_postgree = """INSERT INTO mylo.player_week_ft
                                     value_ply = %s
                                     """
 
-sql_insert_teams_postgree = """INSERT INTO mylo.team_dm
+sql_insert_teams_postgre = """INSERT INTO mylo.team_dm
                 (id, name, short_name, strength_att_home, strength_def_home, strength_att_away, strength_def_away, code)
                 VALUES(%s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET 

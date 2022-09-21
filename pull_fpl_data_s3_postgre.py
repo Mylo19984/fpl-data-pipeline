@@ -19,7 +19,7 @@ args = {
 }
 
 dag = DAG(
-    dag_id='pull-fpl-data-postgree_v1',
+    dag_id='pull-fpl-data-postgre_v1',
     default_args=args,
     schedule_interval='@daily'
 )
@@ -43,14 +43,14 @@ with dag:
             python_callable=write_players_week_data_to_s3_bucket,
         )
 
-    insert_gen_data_postgree = PythonOperator(
+    insert_gen_data_postgre = PythonOperator(
         task_id='fpl_general_data_postgre',
         provide_context=True,
         python_callable=ply_info_s3_to_postgre,
         op_kwargs={'data_flow': ply_data_insert},
     )
 
-    insert_week_data_postgree = PythonOperator(
+    insert_week_data_postgre = PythonOperator(
         task_id='fpl_week_data_postgre',
         python_callable=ply_weeks_s3_to_postgre,
         op_kwargs={'data_flow': week_data_insert}
@@ -76,4 +76,4 @@ with dag:
     )
 
 
-create_db_schema_tables >> get_id_data >> pul_data_s3 >> insert_team_data_postgre >> insert_gen_data_postgree >> insert_week_data_postgree >> insert_player_stats_postgre
+create_db_schema_tables >> get_id_data >> pul_data_s3 >> insert_team_data_postgre >> insert_gen_data_postgre >> insert_week_data_postgre >> insert_player_stats_postgre
