@@ -52,6 +52,7 @@ def create_schema_tables_postgre() -> None:
     conn.execute(sql_queries.sql_create_players_data)
     conn.execute(sql_queries.sql_create_players_week)
     conn.execute(sql_queries.sql_create_players_x_stats)
+    conn.execute(sql_queries.sql_create_week_info)
 
     conn.close()
 
@@ -66,12 +67,7 @@ def write_players_week_data_to_s3_bucket(ti, num_players=10) -> None:
     :param num_players: used to control number of players pulled to s3, for testing purpose
     """
 
-    s3 = boto3.resource(
-        service_name='s3',
-        region_name=aws_user['region'],
-        aws_access_key_id=aws_user['acc_key'],
-        aws_secret_access_key=aws_user['secret_acc_key']
-    )
+    s3 = create_boto3(True)
 
     num_players = ti.xcom_pull(task_ids='fpl_ply_get_id')
 
@@ -98,12 +94,7 @@ def write_general_data_to_s3_bucket() -> None:
 
     """
 
-    s3 = boto3.resource(
-        service_name='s3',
-        region_name=aws_user['region'],
-        aws_access_key_id=aws_user['acc_key'],
-        aws_secret_access_key=aws_user['secret_acc_key']
-    )
+    s3 = create_boto3(True)
 
     task_logger.info('Pulling general data started')
 
@@ -129,12 +120,7 @@ def ply_info_s3_to_postgre(**kwargs) -> None:
         engine = create_engine(
             F'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}')
 
-        s3 = boto3.resource(
-            service_name='s3',
-            region_name=aws_user['region'],
-            aws_access_key_id=aws_user['acc_key'],
-            aws_secret_access_key=aws_user['secret_acc_key']
-        )
+        s3 = create_boto3(True)
 
         s3.Bucket('mylosh').download_file('general_data/general_info.json', 'general_info.json')
         f = open('general_info.json')
@@ -165,34 +151,44 @@ def ply_weeks_s3_to_postgre(**kwargs) -> None:
     :param kwargs: data_flow parameter, thus function can know if some code should be skipped
     """
 
+    engine = create_engine(
+        F'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}')
+
     ti = kwargs['ti']
+    num_of_weeks = 0
+    s3 = create_boto3(False)
+    #num_players = 631
+    num_players = ti.xcom_pull(task_ids='fpl_ply_get_id')
+    # !!!
 
-    if int(kwargs['data_flow']) == 1:
+    task_logger.info('Postgres inserting plyr data started')
+    num_postgre_week_data = 0
 
-        engine = create_engine(
-            F'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}')
+    # !!! changed to 30; num_players
+    for id in range(1, num_players):
+        obj = s3.get_object(Bucket='mylosh', Key=F'ply_data_gw/{id}.json')
+        j = json.loads(obj['Body'].read())
+        data = j['history']
 
-        s3 = boto3.client(
-            's3',
-            region_name=aws_user['region'],
-            aws_access_key_id=aws_user['acc_key'],
-            aws_secret_access_key=aws_user['secret_acc_key']
-        )
+        if (kwargs['data_flow'] == 'All') or (
+                engine.execute(sql_queries.sql_select_last_data_checked_week).fetchone() == 0):
+            end_weeks = len(data)-1
+            beg_weeks = 0
+        elif kwargs['data_flow'] != 'All':
+            end_weeks = int(kwargs['data_flow'])
+            beg_weeks = int(kwargs['data_flow'])
+        else:
+            end_weeks = int(engine.execute(sql_queries.sql_select_last_data_checked_week).fetchone()['week_id'])
+            beg_weeks = end_weeks
 
-        num_players = ti.xcom_pull(task_ids='fpl_ply_get_id')
+        task_logger.info(F'Num of week for pull is: {num_of_weeks}')
 
-        task_logger.info('Postgres inserting plyr data started')
-        num_postgre_week_data = 0
-
-        # !!! changed to 30; num_players
-        for id in range(1, num_players):
-            #s3.Bucket('mylosh').download_file(F'ply_data_gw/{id}.json', F'{id}.json')
-            #f = open(F'{id}.json')
-            obj = s3.get_object(Bucket='mylosh', Key=F'ply_data_gw/{id}.json')
-            j = json.loads(obj['Body'].read())
-            data = j['history']
-
-            for i in range(0, len(data)):
+        for i in range(beg_weeks, end_weeks+1):
+            try:
+                data[i]
+            except IndexError:
+                print(F'Index error, list of out range, for id player: {id}')
+            else:
                 engine.execute(sql_queries.sql_insert_weeks_postgre,
                                (data[i]['element'], data[i]['fixture'], data[i]['total_points'], data[i]['opponent_team'], data[i]['was_home'],
                                 data[i]['team_h_score'], data[i]['team_a_score'], data[i]['round'], data[i]['minutes'], data[i]['goals_scored'],
@@ -207,11 +203,11 @@ def ply_weeks_s3_to_postgre(**kwargs) -> None:
                                 data[i]['value']
                                 ))
 
-            num_postgre_week_data += 1
+                num_postgre_week_data += 1
+                task_logger.info(F'Week number: {i} for id player: {id}')
+                print(F'Week number: {i} for id player: {id}')
 
-        task_logger.info(F'Postgres inserting plyr data finished, no of inserted record {num_postgre_week_data}')
-    else:
-        task_logger.info('Postgres inserting plyr data SKIPPED')
+    task_logger.info(F'Postgres inserting plyr data finished, no of inserted record {num_postgre_week_data}')
 
 
 def pull_last_ply_id() -> int:
@@ -220,12 +216,7 @@ def pull_last_ply_id() -> int:
     :return: Returns the highest player id
     """
 
-    s3 = boto3.resource(
-        service_name='s3',
-        region_name=aws_user['region'],
-        aws_access_key_id=aws_user['acc_key'],
-        aws_secret_access_key=aws_user['secret_acc_key']
-    )
+    s3 = create_boto3(True)
 
     s3.Bucket('mylosh').download_file('general_data/general_info.json', 'general_info.json')
     f = open('general_info.json')
@@ -245,12 +236,7 @@ def team_info_s3_to_postgre(**kwargs) -> None:
         engine = create_engine(
             F'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}')
 
-        s3 = boto3.resource(
-            service_name='s3',
-            region_name=aws_user['region'],
-            aws_access_key_id=aws_user['acc_key'],
-            aws_secret_access_key=aws_user['secret_acc_key']
-        )
+        s3 = create_boto3(True)
 
         s3.Bucket('mylosh').download_file('general_data/general_info.json', 'general_info.json')
         f = open('general_info.json')
@@ -308,8 +294,7 @@ def scrapp_xg_xa_uderstat(match_str: str) -> None:
     df_final['match_id'] = match_str
 
     saving_scrapped_data_s3(df_final)
-
-    #print(df_final[['player_id', 'player', 'time', 'key_passes', 'assists', 'shots', 'xG', 'xA', 'match_id']].head())
+    time.sleep(0.1)
 
 
 def get_matches_ids_4_weeks(weeks=4) -> list:
@@ -355,12 +340,7 @@ def saving_scrapped_data_s3(df_scrapped_data) -> None:
     :param df_scrapped_data: dataframe with scraped match data
     """
 
-    s3 = boto3.resource(
-        service_name='s3',
-        region_name=aws_user['region'],
-        aws_access_key_id=aws_user['acc_key'],
-        aws_secret_access_key=aws_user['secret_acc_key']
-    )
+    s3 = create_boto3(True)
 
     task_logger.info('Saving scrapped data to s3 started')
 
@@ -383,14 +363,7 @@ def ply_stats_s3_to_postgre(**kwargs) -> None:
         engine = create_engine(
             F'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}')
 
-        s3 = boto3.client(
-            service_name='s3',
-            region_name=aws_user['region'],
-            aws_access_key_id=aws_user['acc_key'],
-            aws_secret_access_key=aws_user['secret_acc_key']
-        )
-
-        #data_bucket = s3.Bucket('s3://mylosh/scrapp_stat_data/').objects.all()
+        s3 = create_boto3(False)
 
         data_bucket = s3.list_objects(Bucket = 'mylosh', Prefix='scrapp_stat_data/')['Contents']
 
@@ -420,6 +393,54 @@ def ply_stats_s3_to_postgre(**kwargs) -> None:
     else:
         task_logger.info('Postgres inserting stats data SKIPPED')
 
+
+def week_info_s3_to_postgre() -> None:
+    """ Inserts finished weeks from s3 file to postgre db, table mylo.week_info
+
+    """
+
+    engine = create_engine(
+        F'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}')
+
+    s3 = create_boto3(True)
+
+    s3.Bucket('mylosh').download_file('general_data/general_info.json', 'general_info.json')
+    f = open('general_info.json')
+    data = json.load(f)['events']
+
+    print(data)
+
+    task_logger.info('Postgres inserting week data started')
+    num_postgre_week_data = 0
+
+    for i in range(0, len(data)):
+        engine.execute(sql_queries.sql_insert_week_info_postgre,
+        (data[i]['id'], data[i]['name'], data[i]['average_entry_score'], data[i]['finished'], data[i]['data_checked'],
+         data[i]['name'], data[i]['average_entry_score'], data[i]['finished'], data[i]['data_checked']))
+
+        num_postgre_week_data += 1
+
+    task_logger.info(F'Postgres inserting week data finished, no of inserted records {num_postgre_week_data}')
+
+
+def create_boto3(resource: bool) -> boto3:
+
+    if resource == 1:
+        s3 = boto3.resource(
+            service_name='s3',
+            region_name=aws_user['region'],
+            aws_access_key_id=aws_user['acc_key'],
+            aws_secret_access_key=aws_user['secret_acc_key']
+        )
+    else:
+        s3 = boto3.client(
+            service_name='s3',
+            region_name=aws_user['region'],
+            aws_access_key_id=aws_user['acc_key'],
+            aws_secret_access_key=aws_user['secret_acc_key']
+        )
+
+    return s3
 
 ### functions for pytest; unity testing of data
 

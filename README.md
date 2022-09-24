@@ -145,7 +145,7 @@ Second page (Stats), has the look on general stats of the players.
 - switching table presentation to: https://datatables.net
 - adding dynamic dashboards; thus person can filter the players by position
 - adding fixtures tables, and fixture analysis for top players
-- adding the possibility of user to choose which weeks will dag automatically pick up
+- adding the possibility for user to choose which weeks will dag automatically pick up
 
 ### Future plans
 

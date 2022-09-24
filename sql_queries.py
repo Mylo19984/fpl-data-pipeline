@@ -254,3 +254,23 @@ sql_stats_shots = """with ct_summed_stats as (
                                         from ct_summed_stats
                                         order by shots desc limit 15
                         """
+
+sql_create_week_info = """
+                        CREATE TABLE IF NOT EXISTS 
+                        mylo.week_info_dm (id integer, name varchar(60), avg_score integer, finished boolean,
+                        data_checked boolean,
+                        CONSTRAINT pk_eek_info_id primary key (id)) 
+                        """
+
+sql_insert_week_info_postgre = """INSERT INTO mylo.week_info_dm
+                (id, name, avg_score, finished, data_checked)
+                VALUES(%s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET 
+                                    name = %s,
+                                    avg_score = %s,
+                                    finished = %s,
+                                    data_checked = %s 
+                            """
+
+sql_select_last_data_checked_week = """SELECT coalesce(id,0) as week_id from mylo.week_info_dm order by id desc limit 1 
+                                """
